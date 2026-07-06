@@ -1,0 +1,41 @@
+#include <Wire.h>
+#include <Adafruit_INA219.h>
+#include <ESP8266WiFi.h>
+
+Adafruit_INA219 ina219;
+#define RELAY_PIN 5  // Define relay control pin
+
+// Set threshold values (adjust based on your device's charging profile)
+float fullChargeCurrent = 0.05;  // Current (in Amps) when device is fully charged
+float lowChargeCurrent = 0.2;    // Current (in Amps) when device needs charging
+
+void setup() {
+    Serial.begin(115200);
+    Wire.begin();
+    
+    if (!ina219.begin()) {
+        Serial.println("Failed to find INA219 sensor!");
+        while (1);
+    }
+
+    pinMode(RELAY_PIN, OUTPUT);
+    digitalWrite(RELAY_PIN, HIGH);  // Start with relay ON (charging)
+}
+
+void loop() {
+    float current_mA = ina219.getCurrent_mA() / 1000.0;  // Convert mA to A
+    Serial.print("Current: ");
+    Serial.print(current_mA);
+    Serial.println(" A");
+
+    if (current_mA < fullChargeCurrent) {
+        Serial.println("Device fully charged. Turning off relay...");
+        digitalWrite(RELAY_PIN, LOW);  // Turn off charging
+    } 
+    else if (current_mA > lowChargeCurrent) {
+        Serial.println("Battery low. Turning on relay...");
+        digitalWrite(RELAY_PIN, HIGH); // Turn on charging
+    }
+
+    delay(5000); // Check every 5 seconds
+}
